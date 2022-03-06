@@ -1,6 +1,7 @@
 import uos
 import sdcard
 import machine
+import constants
 from machine import I2C, Pin
 from m32 import stupid_i2c
 from time import sleep_ms
@@ -8,6 +9,9 @@ from datetime import datetime
 from logging import logger
 
 LOGGER = logger(mosi=23, miso=20, cs=9, skl=22)
+
+def read_serial():
+    pass
 
 def test_m32():
     print("start")
@@ -37,7 +41,7 @@ def test_m32():
 
     print("exit")
 
-def test_uSD
+def test_uSD():
     # Assign chip select (CS) pin (and start it high)
     cs = machine.Pin(21, machine.Pin.OUT)
 
@@ -62,3 +66,9 @@ def test_uSD
     # Create a file and write something to it
     with open("/sd/test_pog.txt", "w") as file:
         file.write("INDEX: ici haha.\r\n")
+        
+def main():
+    print("Hello World!")
+
+if __name__ == "__main__":
+    main()
