@@ -15,3 +15,15 @@ class gps_sensor:
             scl=Pin(self.scl), 
             sda=Pin(self.sda), 
             freq=100_000)
+
+    def get_data(self):
+        pass
+
+    def _read_nbr_availlable_bytes(self) -> int:
+        pass
+
+    def _read_bytes(self):
+        pass
+
+    def _convert_data(self):
+        pass

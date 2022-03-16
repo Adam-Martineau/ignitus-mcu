@@ -9,7 +9,7 @@
 # SPI pinout for the uSD card reader
 uSD_miso = 20
 uSD_mosi = 23
-uSD_cs = 21
+uSD_cs = 9
 uSD_sck = 22
 
 # I2C pinout
@@ -32,3 +32,5 @@ current_sensor_reg_bus_voltage = 0x02
 current_sensor_reg_power = 0x03
 current_sensor_reg_current = 0x04
 current_sensor_reg_cal = 0x05
+max_current = 1
+r_shunt = 0.1

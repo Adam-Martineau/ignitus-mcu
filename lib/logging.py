@@ -1,48 +1,38 @@
 import os
 import sdcard
-from machine import SPI, UART, Pin
-from datetime import datetime
+import constants
+from machine import SPI, UART, Pin, RTC
 
-FILE_NAME = "test"
-
-
-# default 23, 20, 9, 22
 class logger:
-    def __init__(self, mosi, miso, cs, sck):
-        self.mosi = mosi
-        self.miso = miso
-        self.cs = cs
-        self.sck = sck
+    def __init__(self, filename):
+        self.spi = SPI(1,
+            baudrate=1000000,
+            polarity=0,
+            phase=0,
+            bits=8,
+            firstbit=SPI.MSB,
+            sck=Pin(constants.uSD_sck),
+            mosi=Pin(constants.uSD_mosi),
+            miso=Pin(constants.uSD_miso))
+
+        self.cs = Pin(9, Pin.OUT)
+        self.filename = filename
         
     def write(self, msg: str):
-        _write_to_serial(msg)
-        _write_to_uSD(msg)
+        self._write_to_serial(msg)
+        self._write_to_uSD(msg)
     
     def _write_to_serial(self, msg: str):
-        uart = machine.UART(1, baudrate=9600, tx=Pin(0), rx=Pin(1))
+        uart = UART(1, baudrate=9600, tx=Pin(0), rx=Pin(1))
         uart.write(msg)
     
     def _write_to_uSD(self, msg: str):
-        # Assign chip select (CS) pin (and start it high)
-        cs = machine.Pin(9, machine.Pin.OUT)
-
-        # Intialize SPI peripheral (start with 1 MHz)
-        spi = machine.SPI(1,
-                        baudrate=1000000,
-                        polarity=0,
-                        phase=0,
-                        bits=8,
-                        firstbit=machine.SPI.MSB,
-                        sck=machine.Pin(22),
-                        mosi=machine.Pin(23),
-                        miso=machine.Pin(20))
-
         # Initialize SD card
-        sd = sdcard.SDCard(spi, cs)
+        sd = sdcard.SDCard(self.spi, self.cs)
 
         # Mount filesystem
         os.mount(fsobj=sd, mount_point='/sd', readonly=False)
 
         # Create a file and write something to it
-        with open(f"/sd/{FILE_NAME}.txt", "a") as file:
-            file.write(f"{INDEX}: {msg}\r\n")
+        with open(f"/sd/{self.filename}.txt", "a") as file:
+            file.write(f"<{RTC.datetime()}> {msg}\r\n")

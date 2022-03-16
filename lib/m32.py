@@ -19,7 +19,13 @@ class m32_sensor:
             sda=Pin(self.sda), 
             freq=100_000)
 
-    def read_data(self):
+    def get_data(self):
+        pass
+
+    def convert_temp(self):
+        pass
+
+    def convert_press(self):
         pass
 
     def _read_bytes(self):
@@ -28,5 +34,3 @@ class m32_sensor:
         for b in mybytes:
             print(bin(b))
 
-    def _bytes_to_int(self, bytes):
-        pass
