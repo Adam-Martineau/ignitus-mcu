@@ -3,6 +3,7 @@ from machine import Pin, SoftI2C
 class gps_data:
     add:int
     data = 0
+    timestamp = NULL
 
 class gps_sensor:
     def __init__(self, add:int, sda: int, scl:int):
