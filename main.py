@@ -2,23 +2,37 @@ import uos
 import sdcard
 import machine
 import constants
-from machine import I2C, Pin
+from machine import SoftI2C, Pin, UART
 from m32 import stupid_i2c
 from time import sleep_ms
-from datetime import datetime
-from logging import logger
+import logging
+from time import sleep_us
 
-LOGGER = logger(mosi=23, miso=20, cs=9, skl=22)
+#LOGGER = logging.logger(mosi=23, miso=20, cs=9, skl=22)
+#uart = UART(1, 9600)
+
+class sensor_value:
+    tank1_press = 0
+    tank1_temp = 0
+    tank2_press = 0
+    tank2_temp = 0
+    engine_press = 0
+    engine_temp = 0
+    gps = 0
+    current = 0
+
+sensor = sensor_value()
 
 def read_serial():
-    pass
+    input = uart.read()
+    print(input)
 
 def test_m32():
     print("start")
 
-    i2c = I2C(0, scl=Pin(5), sda=Pin(4), freq=100_000)
+    i2c = SoftI2C(scl=Pin(5), sda=Pin(4), freq=100_000)
 
-    print(i2c.scan())
+    # print(i2c.scan())
 
     m32 = stupid_i2c(sda=4, scl=5)
 
@@ -26,18 +40,18 @@ def test_m32():
     m32.send_byte(0x28)
     m32.wait_4_ack()
     m32.stop()
-    sleep_ms(2)
+    # sleep_ms(2)
 
-    print("m32 as woke up")
+    # print("m32 as woke up")
 
-    m32.start()
-    m32.send_byte(0x28)
-    m32.wait_4_ack()
-    print(m32.read_byte(True))
-    print(m32.read_byte(True))
-    print(m32.read_byte(True))
-    print(m32.read_byte(False))
-    m32.stop()
+    # m32.start()
+    # m32.send_byte(0x28)
+    # m32.wait_4_ack()
+    # print(m32.read_byte(True))
+    # print(m32.read_byte(True))
+    # print(m32.read_byte(True))
+    # print(m32.read_byte(False))
+    # m32.stop()
 
     print("exit")
 
@@ -68,7 +82,7 @@ def test_uSD():
         file.write("INDEX: ici haha.\r\n")
         
 def main():
-    print("Hello World!")
-
+    test_m32()
+    
 if __name__ == "__main__":
     main()

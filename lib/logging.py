@@ -3,7 +3,7 @@ import sdcard
 from machine import SPI, UART, Pin
 from datetime import datetime
 
-FILE_NAME = datetime.now()
+FILE_NAME = "test"
 
 
 # default 23, 20, 9, 22
