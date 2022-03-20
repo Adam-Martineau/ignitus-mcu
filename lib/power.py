@@ -7,10 +7,10 @@ class power_supplie_data:
     power:int
     current:int
     voltage:int
-    timestamp = NULL
+    timestamp = None
 
 class power_supplie_sensor:
-    def __init__(self, add:int, sda: int, scl:int):
+    def __init__(self, add:int):
         self.sda = constants.i2c_sda
         self.scl = constants.i2c_scl
         self.add = constants.current_sensor_add
@@ -31,6 +31,7 @@ class power_supplie_sensor:
         self._convert_power()
         self._convert_voltage()
         self.data.timestamp = RTC.datetime()
+        self.data.add = self.add
         return self.data
 
     def _convert_current(self):

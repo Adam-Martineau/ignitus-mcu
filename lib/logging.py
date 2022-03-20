@@ -15,7 +15,7 @@ class logger:
             mosi=Pin(constants.uSD_mosi),
             miso=Pin(constants.uSD_miso))
 
-        self.cs = Pin(9, Pin.OUT)
+        self.cs = Pin(constants.uSD_cs, Pin.OUT)
         self.filename = filename
         
     def write(self, msg: str):

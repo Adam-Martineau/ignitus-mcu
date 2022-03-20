@@ -6,10 +6,13 @@
 # File containing all the constant for the project
 # DON'T TOUCH THIS FILE, unless you really know what your doing
 
+# Servo motor
+servo_pin = 13
+
 # SPI pinout for the uSD card reader
 uSD_miso = 20
 uSD_mosi = 23
-uSD_cs = 9
+uSD_cs = 21
 uSD_sck = 22
 
 # I2C pinout
