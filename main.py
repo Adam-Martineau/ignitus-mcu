@@ -14,6 +14,7 @@ class system_data:
     tank2:m32_data
     engine:m32_data
     power:power_supplie_data
+    gps:gps_data
 
 data = system_data()
 
@@ -21,12 +22,14 @@ tank1_sensor = m32_sensor(constants.m32_add_tank_1)
 tank2_sensor = m32_sensor(constants.m32_add_tank_2)
 engine_sensor = m32_sensor(constants.m32_add_engine)
 power_sensor = power_supplie_sensor(constants.gps_add)
+gps_sensor_1 = gps_sensor(constants.gps_add)
 
 def refresh_data():
     data.tank1 = tank1_sensor.get_data()
     data.tank2 = tank2_sensor.get_data()
     data.engine = engine_sensor.get_data()
     data.power = power_sensor.get_data()
+    data.gps = gps_sensor_1.get_data()
 
 #LOGGER = logging.logger("test")
 
