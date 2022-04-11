@@ -3,9 +3,11 @@
 
 import constants
 
-from machine import RTC, Pin
+from time import sleep_ms,
+from machine import RTC, Pin, UART
 from servomotor import servo
 from m32 import m32_sensor, m32_data
+from machine import Pin, SoftI2C
 
 def open_servo():
     moteur = servo(constants.servo_pin)
@@ -41,4 +43,43 @@ def get_currant():
 def get_gps():
     gps_sensor_1 = gps_sensor(constants.gps_add)
     return gps_sensor_1.get_data()
+    
+    
+def i2c_scan():
+    sda = constants.i2c_sda
+    scl = constants.i2c_scl
+    i2c = SoftI2C(scl=Pin(scl), sda=Pin(sda), freq=100_000)
+    print(i2c.scan())
+
+
+def serial_tx(msg):
+    uart = UART(0,
+        baudrate=9600,
+        tx=Pin(constants.uart_tx),
+        rx=Pin(constants.uart_rx),
+        bits=8,
+        parity=None,
+        stop=1)
+    
+    uart.write(msg)
+    
+
+def serial_rx():
+    uart = UART(0,
+        baudrate=9600,
+        tx=Pin(constants.uart_tx),
+        rx=Pin(constants.uart_rx),
+        rxbuf = 100,
+        bits=8,
+        parity=None,
+        stop=1)
+    
+    input("Press enter want ready to uart.read()")
+    print(uart.read())
+    
+    
+def logging_test():
+    uart = UART(0, baudrate=9600, tx=Pin(constants.uart_tx), rx=Pin(constants.uart_rx), bits=8, parity=None, stop=1)
+    log = logger("test", uart)
+    log.write("test")
     

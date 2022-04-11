@@ -6,6 +6,10 @@
 # File containing all the constant for the project
 # DON'T TOUCH THIS FILE, unless you really know what your doing
 
+# UART pins
+uart_tx = 0
+uart_rx = 1
+
 # Servo motor
 servo_pin = 13
 

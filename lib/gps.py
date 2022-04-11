@@ -1,3 +1,4 @@
+import json
 import constants
 from machine import Pin, SoftI2C
 
@@ -6,6 +7,16 @@ class gps_data:
     n_bytes = 0 
     data = 0
     timestamp = None
+    
+    def __str__():
+        return json.dumps(
+            {
+                'add': self.add,
+                'n_bytes': self.n_bytes,
+                'data': self.data,
+                'timestamp': self.timestamp
+            }
+        )
 
 class gps_sensor:
     def __init__(self, add:int):

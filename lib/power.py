@@ -8,6 +8,17 @@ class power_supplie_data:
     current:int
     voltage:int
     timestamp = None
+    
+    def __str__(self):
+        return json.dumps(
+            {
+                'add': self.add,
+                'power': self.power,
+                'current': self.current,
+                'voltage': self.voltage,
+                'timestamp': self.timestamp
+            }
+        )
 
 class power_supplie_sensor:
     def __init__(self, add:int):
