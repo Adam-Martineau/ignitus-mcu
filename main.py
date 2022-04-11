@@ -20,7 +20,7 @@ class system_data:
     purge_valve = False
     main_valve = False
     
-    def __str__():
+    def __str__(self):
         return json.dumps(
             {
                 'tank1': self.tank1,
@@ -55,7 +55,7 @@ def refresh_data():
     data.power = power_sensor.get_data()
     data.gps = gps_sensor_1.get_data()
 
-class serial_reader:
+class serial:
     # Here we read the uart buffer and add any character to uart_rx if we find any command,
     # we remove it from uart_rx and execute the associated code. We do this because we can
     # read the uart rx buffer mid transmission, cutting a command in half.
@@ -66,7 +66,7 @@ class serial_reader:
     def __init__(self, uart):
         self.uart = uart
 
-    def read_serial(self):
+    def read(self):
         if self.uart.any() > 0:
             self.buffer += self.uart.read().decode("utf-8")
             
@@ -77,19 +77,19 @@ class serial_reader:
 
 def exec_cmd(cmd):
     if cmd == 'emergency_stop':
-        log.write('Emergency stop engaging \n\r')
+        log.write('\n\rEmergency stop engaging \n\r')
         sub_systems.emergency_stop()
     elif cmd == 'ignition':
-        log.write('Ignition initiated \n\r')
+        log.write('\n\rIgnition initiated \n\r')
         sub_systems.ignition()
     elif cmd == 'launch':
-        log.write('Launch started \n\r')
+        log.write('\n\rLaunch started \n\r')
         sub_systems.launch()
     elif cmd == 'purge_open':
-        log.write('Purge opening \n\r')
+        log.write('\n\rPurge opening \n\r')
         sub_systems.purge_open()
     elif cmd == 'purge_close':
-        log.write('Purge closing \n\r')
+        log.write('\n\rPurge closing \n\r')
         sub_systems.purge_close()
 
             
@@ -97,10 +97,11 @@ uart = UART(0, baudrate=9600, tx=Pin(constants.uart_tx), rx=Pin(constants.uart_r
 log = logger("test", uart)
 
 def main():
-    b = serial_reader(uart)
+    sr = serial(uart)
+    
     while True:
         #refresh_data()
-        cmd = b.read_serial()
+        cmd = sr.read()
         if cmd:
             print(cmd)
             exec_cmd(cmd)

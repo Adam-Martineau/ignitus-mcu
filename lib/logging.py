@@ -1,10 +1,22 @@
 import os
 import sdcard
 import constants
+
 from machine import SoftSPI, UART, Pin, RTC
 
 class logger:
     def __init__(self, filename, uart):
+        self.filename = filename   
+        self.uart = uart
+        
+    def write(self, msg: str):
+        self._write_to_serial(msg)
+        self._write_to_uSD(msg)
+    
+    def _write_to_serial(self, msg: str):
+        self.uart.write(msg)
+    
+    def _write_to_uSD(self, msg: str):
         self.spi = SoftSPI(
             baudrate=1000000,
             polarity=0,
@@ -17,23 +29,13 @@ class logger:
         )
 
         self.cs = Pin(constants.uSD_cs, Pin.OUT)
-        self.filename = filename
         
-        self.uart = uart
-        
-    def write(self, msg: str):
-        self._write_to_serial(msg)
-        self._write_to_uSD(msg)
-    
-    def _write_to_serial(self, msg: str):
-        self.uart.write(msg)
-    
-    def _write_to_uSD(self, msg: str):
         # Initialize SD card
         sd = sdcard.SDCard(self.spi, self.cs)
 
         # Mount filesystem
-        os.mount(sd, '/sd')
+        if 'sd' not in os.listdir():
+            os.mount(sd, '/sd')
         
         rtc = RTC()
         
@@ -42,4 +44,4 @@ class logger:
         
         # Create a file and write something to it
         with open(path, "a") as file:
-            file.write(msg)
+            print(msg, file=file)

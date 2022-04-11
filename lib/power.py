@@ -21,6 +21,9 @@ class power_supplie_data:
         )
 
 class power_supplie_sensor:
+    data = power_supplie_data()
+    rtc = RTC()
+        
     def __init__(self, add:int):
         self.sda = constants.i2c_sda
         self.scl = constants.i2c_scl
@@ -30,8 +33,6 @@ class power_supplie_sensor:
             scl=Pin(self.scl), 
             sda=Pin(self.sda), 
             freq=100_000)
-
-        self.data = power_supplie_data()
     
     def get_data(self) -> power_supplie_data:
         self._write_calibration()
@@ -41,7 +42,8 @@ class power_supplie_sensor:
         self._convert_current()
         self._convert_power()
         self._convert_voltage()
-        self.data.timestamp = RTC.datetime()
+        
+        self.data.timestamp = self.rtc.datetime()
         self.data.add = self.add
         return self.data
 

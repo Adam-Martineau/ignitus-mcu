@@ -4,10 +4,12 @@
 import constants
 
 from time import sleep_ms,
-from machine import RTC, Pin, UART
+from logging import logger
 from servomotor import servo
-from m32 import m32_sensor, m32_data
 from machine import Pin, SoftI2C
+from machine import RTC, Pin, UART
+from m32 import m32_sensor, m32_data
+
 
 def open_servo():
     moteur = servo(constants.servo_pin)
@@ -80,6 +82,6 @@ def serial_rx():
     
 def logging_test():
     uart = UART(0, baudrate=9600, tx=Pin(constants.uart_tx), rx=Pin(constants.uart_rx), bits=8, parity=None, stop=1)
-    log = logger("test", uart)
-    log.write("test")
+    log = logger("thisisatest", uart)
+    log.write("test\n\r")
     
