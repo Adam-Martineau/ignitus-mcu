@@ -1,19 +1,21 @@
 import json
 import constants
-from machine import Pin, SoftI2C
+from machine import Pin, SoftI2C, RTC
 
 class gps_data:
-    add:int
-    n_bytes = 0 
-    data = 0
+    add:int = 0
+    n_sat = 0 
+    long = 0
+    lat = 0
     timestamp = None
     
-    def __str__():
+    def __str__(self):
         return json.dumps(
             {
                 'add': self.add,
-                'n_bytes': self.n_bytes,
-                'data': self.data,
+                'n_sat': self.n_sat,
+                'long': self.long,
+                'lat': self.lat,
                 'timestamp': self.timestamp
             }
         )
@@ -32,16 +34,29 @@ class gps_sensor:
         self.data = gps_data()
 
     def get_data(self):
-        self.data.n_bytes = self._read_nbr_availlable_bytes()
-        self.data.data = self._read_bytes()
-        self._convert_data()
+        n_bytes = self._read_nbr_availlable_bytes()
+        raw_data = self._read_bytes(n_bytes)
+        self._convert_data(raw_data)
+        
+        rtc = RTC()
+        self.data.add = self.add
+        self.data.timestamp = rtc.datetime()
+        
+        return self.data
 
     def _read_nbr_availlable_bytes(self) -> int:
-        n_bytes_msb = self.i2c.readfrom_mem(self.add, 0xFD, 1)
-        n_bytes_lsb = self.i2c.readfrom_mem(self.add, 0xFE, 1)
+        n_bytes_msb = int.from_bytes(self.i2c.readfrom_mem(self.add, 0xFD, 1), "big")
+        n_bytes_lsb = int.from_bytes(self.i2c.readfrom_mem(self.add, 0xFE, 1), "big")
+        return (n_bytes_msb * 16) + n_bytes_lsb
 
-    def _read_bytes(self):
-        self.data.data = self.i2c.readfrom_mem(self.add, 0xFF, self.data.n_bytes)
+    def _read_bytes(self, n_bytes):
+        print(n_bytes)
+        if not n_bytes == 0:
+            #return self.i2c.readfrom_mem(self.add, 0xFF, n_bytes)
+            data = ""
+            while not data == 0xff:
+                data = self.i2c.readfrom(self.add, 1).decode("utf-8")
+                print(data)
 
-    def _convert_data(self):
+    def _convert_data(self, raw_data):
         pass
