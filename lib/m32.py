@@ -1,12 +1,11 @@
 import json
 import constants
-from machine import Pin, SoftI2C, RTC
+from machine import Pin, I2C
 
 class m32_data:
-    add:int
-    temp:int
-    pressure:int
-    timestamp = None
+    add = None
+    temp = None
+    pressure = None
     
     def __str__(self):
         return json.dumps(
@@ -19,53 +18,46 @@ class m32_data:
         )
 
 class m32_sensor:
+    data = m32_data()
+    
     def __init__(self, add):
         self.sda = constants.i2c_sda
         self.scl = constants.i2c_scl
         self.add = add
 
-        self.i2c = SoftI2C(
+        self.i2c = I2C(0,
             scl=Pin(self.scl), 
             sda=Pin(self.sda), 
             freq=100_000)
-
-        self.data = m32_data()
-        
-        self.rtc = RTC()
 
     def get_data(self):
         self._read_bytes()
         self._convert_press()
         self._convert_temp()
-        self.data.timestamp = self.rtc.datetime()
         self.data.add = self.add
+        
         return self.data
 
-    def change_add(self, old, new):
+    def change_add(self, new):
         pass
 
     def _convert_temp(self):
-        temp = ((25*self.data.temp)/256) - 50
-        self.data.temp = temp
+        self.data.temp = ((25*self.data.temp)/256) - 50
 
     def _convert_press(self):
-        press = (self.data.pressure - 1000)/40
-        self.data.pressure = press
+        self.data.pressure = (self.data.pressure - 1000)/40
 
     def _read_bytes(self):
-        self.i2c.writeto(self.add, self.add.to_bytes(2, 'big'))
-        mybytes = self.i2c.readfrom(0x28, 4 , True)
+        #self.i2c.writeto(self.add, self.add.to_bytes(2, 'big'))
+        mybytes = self.i2c.readfrom(self.add, 4, False)
+        self.data.pressure = (mybytes[0] << 8) + mybytes[1]
+        self.data.temp = ((mybytes[2] << 8) + mybytes[3]) >> 5
+        
+        for b in mybytes:
+            print(b)
+        
+        print(self.data.pressure)
+        print(self.data.temp)
 
-        self.data.pressure = 459
-
-        self.data.temp = 92
-        
-        print(mybytes)
-        
-        print(mybytes[0])
-        print(mybytes[1])
-        print(mybytes[2])
-        print(mybytes[3])
-        
-        #print(self.data.pressure)
-        #print(self.data.temp)
+m = m32_sensor(constants.m32_add_tank_1)
+print(m.get_data())

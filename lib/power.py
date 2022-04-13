@@ -1,6 +1,6 @@
 from math import trunc
 import json
-from machine import Pin, SoftI2C, RTC
+from machine import Pin, SoftI2C
 import constants
 
 class power_supplie_data:
@@ -8,7 +8,6 @@ class power_supplie_data:
     power = None
     current = None
     voltage = None
-    timestamp = None
     
     def __str__(self):
         return json.dumps(
@@ -17,13 +16,11 @@ class power_supplie_data:
                 'power': self.power,
                 'current': self.current,
                 'voltage': self.voltage,
-                'timestamp': self.timestamp
             }
         )
 
 class power_supplie_sensor:
     data = power_supplie_data()
-    rtc = RTC()
         
     def __init__(self, add:int):
         self.sda = constants.i2c_sda
@@ -47,7 +44,6 @@ class power_supplie_sensor:
         self._convert_current()
         self._convert_power()
         
-        self.data.timestamp = self.rtc.datetime()
         self.data.add = self.add
         return self.data
 
