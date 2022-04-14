@@ -1,10 +1,12 @@
 import json
 import constants
 from machine import Pin, I2C
+from time import sleep_ms
 
 class m32_data:
     add = None
     temp = None
+    status = None
     pressure = None
     
     def __str__(self):
@@ -13,7 +15,7 @@ class m32_data:
                 'add': self.add,
                 'temp': self.temp,
                 'pressure': self.pressure,
-                'timestamp': self.timestamp
+                'status': self.status
             }
         )
 
@@ -42,22 +44,16 @@ class m32_sensor:
         pass
 
     def _convert_temp(self):
-        self.data.temp = ((25*self.data.temp)/256) - 50
+        self.data.temp = (5370619521453261/54975581388800000) * self.data.temp - (25009/500)
 
     def _convert_press(self):
-        self.data.pressure = (self.data.pressure - 1000)/40
-
+        print(self.data.pressure)
+        self.data.pressure = (785370160604119/109951162777600000) * self.data.pressure - (71429/10000)
+        self.data.pressure = (self.data.pressure * 350) / 100
+        
     def _read_bytes(self):
         #self.i2c.writeto(self.add, self.add.to_bytes(2, 'big'))
-        mybytes = self.i2c.readfrom(self.add, 4, False)
-        self.data.pressure = (mybytes[0] << 8) + mybytes[1]
+        mybytes = self.i2c.readfrom(self.add, 4, True)
+        self.data.status = mybytes[0] >> 6
+        self.data.pressure = ((mybytes[0] << 8) + mybytes[1]) & 0x3FFF
         self.data.temp = ((mybytes[2] << 8) + mybytes[3]) >> 5
-        
-        for b in mybytes:
-            print(b)
-        
-        print(self.data.pressure)
-        print(self.data.temp)
-
-m = m32_sensor(constants.m32_add_tank_1)
-print(m.get_data())
