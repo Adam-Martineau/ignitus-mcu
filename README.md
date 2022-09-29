@@ -6,6 +6,7 @@ Welcome to my tutorial :)
 What you will need:
 
 - The Thonny text editor (https://thonny.org/)
+- A USB-C cable
 - A board with the RP2040
 
 To install the main program:
