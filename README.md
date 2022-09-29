@@ -26,4 +26,5 @@ Exemple ->
 MicroPython v1.18 on 2022-01-17; Raspberry Pi Pico with RP2040
 
 Type "help()" for more information.
->>> open_servo()
+
+\>>> open_servo()
