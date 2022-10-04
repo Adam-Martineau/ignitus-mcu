@@ -3,11 +3,13 @@ import json
 import time
 from math import trunc
 from machine import Pin, UART, RTC, I2C, SoftI2C, PWM, SoftSPI, Timer
-from tokenize import Double
 
 ###########################################
 ############### CONSTANTS #################
 ###########################################
+
+_serial_start = "_JSONHEADER_"
+_serial_stop = "_JSONFOOTER_"
 
 # UART pins
 uart_tx = 0
@@ -27,9 +29,10 @@ i2c_sda = 4
 i2c_scl = 5
 
 # i2c addresses for the m3200 sensors
-m32_add_tank_1 = 0x28
-m32_add_tank_2 = 0x28
-m32_add_engine = 0x28
+m32_multiplexer = 0x28
+m32_tank1 = b'1'
+m32_tank2 = b'2'
+m32_engine = b'3'
 
 # i2c param for the gps
 gps_add = 0x42
@@ -59,10 +62,10 @@ class gps_data:
     def __str__(self):
         return json.dumps(
             {
-                'add': self.add,
-                'n_sat': self.n_sat,
-                'long': self.long,
-                'lat': self.lat,
+                "add": self.add,
+                "n_sat": self.n_sat,
+                "long": self.long,
+                "lat": self.lat,
             }
         )
 
@@ -138,20 +141,10 @@ class servo:
 ###########################################
 
 class power_supplie_data:
-    add: int = None
-    power: Double = None
-    current: Double = None
-    voltage: Double = None
-    
-    def __str__(self):
-        return json.dumps(
-            {
-                'add': self.add,
-                'power': self.power,
-                'current': self.current,
-                'voltage': self.voltage,
-            }
-        )
+    add: int = 0
+    power = 0
+    current = 0
+    voltage = 0
 
 class power_supplie_sensor:
     data = power_supplie_data()
@@ -161,6 +154,8 @@ class power_supplie_sensor:
         self.scl = i2c_scl
         self.add = current_sensor_add
         self.current_lsb = max_current/(2**15)
+        
+        self.data.add = self.add
 
         self.i2c = SoftI2C(
             scl=Pin(self.scl), 
@@ -178,7 +173,6 @@ class power_supplie_sensor:
         self._convert_current()
         self._convert_power()
         
-        self.data.add = self.add
         return self.data
 
     def _convert_current(self):
@@ -210,10 +204,7 @@ class power_supplie_sensor:
 
     def _get_cal(self):
         value = trunc(0.04096 / (self.current_lsb * r_shunt))
-        return bytearray(value.to_bytes(2, 'big'))
-    
-power = power_supplie_sensor(64)
-print(power.get_data())
+        return bytearray(value.to_bytes(2, "big"))
 
 
 ###########################################
@@ -222,20 +213,10 @@ print(power.get_data())
 
 class m32_data:
     add: int = None
-    temp: Double = None
+    temp = None
     status: int = None
-    pressure: Double = None
+    pressure = None
     
-    def __str__(self):
-        return json.dumps(
-            {
-                'add': self.add,
-                'temp': self.temp,
-                'pressure': self.pressure,
-                'status': self.status
-            }
-        )
-
 class m32_sensor:
     data = m32_data()
     
@@ -243,6 +224,8 @@ class m32_sensor:
         self.sda = i2c_sda
         self.scl = i2c_scl
         self.add = add
+        
+        self.data.add = self.add
 
         self.i2c = I2C(0,
             scl=Pin(self.scl), 
@@ -253,12 +236,8 @@ class m32_sensor:
         self._read_bytes()
         self._convert_press()
         self._convert_temp()
-        self.data.add = self.add
         
         return self.data
-
-    def change_add(self, new):
-        pass
 
     def _convert_temp(self):
         self.data.temp = (5370619521453261/54975581388800000) * self.data.temp - (25009/500)
@@ -269,12 +248,11 @@ class m32_sensor:
         self.data.pressure = (self.data.pressure * 350) / 100
         
     def _read_bytes(self):
-        #self.i2c.writeto(self.add, self.add.to_bytes(2, 'big'))
+        #self.i2c.writeto(self.add, self.add.to_bytes(2, "big"))
         mybytes = self.i2c.readfrom(self.add, 4, True)
         self.data.status = mybytes[0] >> 6
         self.data.pressure = ((mybytes[0] << 8) + mybytes[1]) & 0x3FFF
         self.data.temp = ((mybytes[2] << 8) + mybytes[3]) >> 5
-
 
 ###########################################
 ################ SD CARD ##################
@@ -359,13 +337,13 @@ class SDCard:
             self.sectors = (c_size + 1) * (2 ** (c_size_mult + 2))
         else:
             raise OSError("SD card CSD format not supported")
-        # print('sectors', self.sectors)
+        # print("sectors", self.sectors)
 
         # CMD16: set block length to 512 bytes
         if self.cmd(16, 512, 0) != 0:
             raise OSError("can't set 512 block size")
 
-        # set to high data rate now that it's initialised
+        # set to high data rate now that it"s initialised
         self.init_spi(1320000)
 
     def init_card_v1(self):
@@ -542,23 +520,35 @@ class SDCard:
 ###########################################
 
 class system_data:
-    tank1:m32_data
-    tank2:m32_data
-    engine:m32_data
-    power:power_supplie_data
+    tank1:m32_data = None
+    tank2:m32_data = None
+    engine:m32_data = None
+    power:power_supplie_data = None
     battery:bool = False
     armed:bool = False
     ignition:bool = False
     purge_valve:bool = False
     main_valve:bool = False
-    
+
     def __str__(self):
         return json.dumps(
             {
-                'tank1': self.tank1,
-                'tank2': self.tank2,
-                'engine': self.engine,
-                'power': self.power,
+                'tank1_add': self.tank1.add,
+                'tank1_temp': self.tank1.temp,
+                'tank1_status': self.tank1.status,
+                'tank1_pressure': self.tank1.pressure,
+                'tank2_add': self.tank2.add,
+                'tank2_temp': self.tank2.temp,
+                'tank2_status': self.tank2.status,
+                'tank2_pressure': self.tank2.pressure,
+                'engine_add': self.engine.add,
+                'engine_temp': self.engine.add,
+                'engine_status': self.engine.status,
+                'engine_pressure': self.engine.pressure,
+                'power_add': self.power.add,
+                'power_power': self.power.power,
+                'power_current': self.power.current,
+                'power_voltage': self.power.voltage,
                 'battery': self.battery,
                 'armed': self.armed,
                 'ignition': self.ignition,
@@ -566,14 +556,13 @@ class system_data:
                 'main_valve': self.main_valve,
             }
         )
+        
 
 # main data struc
 data = system_data()
 
 # sensors definitions
-tank1_sensor = m32_sensor(m32_add_tank_1)
-tank2_sensor = m32_sensor(m32_add_tank_2)
-engine_sensor = m32_sensor(m32_add_engine)
+tank1_sensor = m32_sensor(m32_multiplexer)
 power_sensor = power_supplie_sensor(gps_add)
 
 
@@ -587,8 +576,8 @@ class logger:
         self.uart = uart
         
     def write(self):
-        self._write_to_serial(data)
-        self._write_to_uSD(data)
+        self._write_to_serial(_serial_start + str(data) + _serial_stop)
+        #self._write_to_uSD(str(data))
     
     def _write_to_serial(self, msg: str):
         self.uart.write(msg)
@@ -611,8 +600,8 @@ class logger:
         sd = SDCard(self.spi, self.cs)
 
         # Mount filesystem
-        if 'sd' not in os.listdir():
-            os.mount(sd, '/sd')
+        if "sd" not in os.listdir():
+            os.mount(sd, "/sd")
         
         rtc = RTC()
         
@@ -660,25 +649,70 @@ def ignition():
 uart = UART(0, baudrate=9600, tx=Pin(uart_tx), rx=Pin(uart_rx), bits=8, parity=None, stop=1)
 log = logger("test", uart)
 
+def switch_multiplexer(device):
+    i2c = I2C(0,
+            scl=Pin(i2c_scl), 
+            sda=Pin(i2c_sda), 
+            freq=100_000)
+            
+    i2c.writeto(m32_multiplexer, device)
+
 def refresh_data(t):
-    data.tank1 = tank1_sensor.get_data()
-    data.tank2 = tank2_sensor.get_data()
-    data.engine = engine_sensor.get_data()
-    data.power = power_sensor.get_data()
+    m32 = m32_data()
+    m32.add = 32
+    m32.temp = 43
+    m32.status = 2
+    m32.pressure = 134
+    
+#    data.tank1 = m32
+    data.tank2 = m32
+    data.engine = m32
+    
+    power = power_supplie_data()
+    m32.add = 32
+    m32.voltage = 43
+    m32.current = 2
+    m32.power = 134
+    
+    data.power = power
+
+    try:
+#        switch_multiplexer(m32_tank1)
+        data.tank1 = tank1_sensor.get_data()
+    except:
+        print("Error reading data from tank1.")
+#    
+#    try:
+#        switch_multiplexer(m32_tank2)
+#        data.tank2 = tank2_sensor.get_data()
+#    except:
+#        print("Error reading data from tank2.")
+#        
+#    try:
+#        switch_multiplexer(m32_engine)
+#        data.engine = engine_sensor.get_data()
+#    except:
+#        print("Error reading data from engine.")
+#        
+#    try:
+#        data.power = power_sensor.get_data()
+#    except:
+#        print("Error reading data from power.")
 
 class serial:
     # Here we read the uart buffer and add any character to uart_rx if we find any command,
     # we remove it from uart_rx and execute the associated code. We do this because we can
     # read the uart rx buffer mid transmission, cutting a command in half.
     
-    commands_list = ['emergency_stop', 
-                     'ignition', 
-                     'main_valve_open', 
-                     'main_valve_close', 
-                     'purge_open', 
-                     'purge_close']
+    commands_list = ["emergency_stop", 
+                     "ignition", 
+                     "main_valve_open", 
+                     "main_valve_close", 
+                     "purge_open", 
+                     "purge_close",
+                     "data"]
 
-    buffer = 'uart buffer:'
+    buffer = "uart buffer:"
     
     def __init__(self, uart):
         self.uart = uart
@@ -689,7 +723,7 @@ class serial:
             
             for cmd in self.commands_list:
                 if cmd in self.buffer:
-                    self.buffer = self.buffer.replace(cmd, '')
+                    self.buffer = self.buffer.replace(cmd, "")
                     return cmd
     
     def write_data():
@@ -699,46 +733,46 @@ class serial:
         uart.write(out)
 
 def exec_cmd(cmd):
-    if cmd == 'emergency_stop':
-        log.write('Emergency stop engaging \n\r')
+    if cmd == "emergency_stop":
         emergency_stop()
 
-    elif cmd == 'ignition':
-        log.write('Ignition initiated \n\r')
+    elif cmd == "ignition":
         ignition()
 
-    elif cmd == 'main_valve_open':
-        log.write('Opening main vavle \n\r')
+    elif cmd == "main_valve_open":
         main_valve_open()
 
-    elif cmd == 'main_valve_close':
-        log.write('Closing main valve \n\r')
+    elif cmd == "main_valve_close":
         main_valve_close()
 
-    elif cmd == 'purge_open':
-        log.write('Purge opening \n\r')
+    elif cmd == "purge_open":
         purge_open()
 
-    elif cmd == 'purge_close':
-        log.write('Purge closing \n\r')
+    elif cmd == "purge_close":
         purge_close()
+        
+    elif cmd == "data":
+        log.write()
+
+
+serialPort = serial(uart)
+
+def commands(t):
+    command = serialPort.read()
+
+    if command:
+        print(command)
+        exec_cmd(command)
 
 def main():
-    serialPort = serial(uart)
     timerRefreshData = Timer()
-    timerSendData = Timer()
+    timerCommands = Timer()
 
-    timerRefreshData.init(period=250, callback=refresh_data())
-    timerSendData.init(period=1000, callback=log.write())
-
+    timerRefreshData.init(period=250, callback=refresh_data)
+    timerCommands.init(period=25, callback=commands)
+    
     while True:
-        command = serialPort.read()
-        
-        if command:
-            print(command)
-            exec_cmd(command)
-        
-        time.sleep(1)  
+        time.sleep(1000)  
 
 
 if __name__ == "__main__":
