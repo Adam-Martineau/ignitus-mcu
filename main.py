@@ -8,13 +8,15 @@ from machine import Pin, UART, RTC, I2C, SoftI2C, PWM, SoftSPI, Timer
 ############### CONSTANTS #################
 ###########################################
 
-multiplexor = false
+multiplexor = False
 
 _serial_start = "_JSONHEADER_"
 _serial_stop = "_JSONFOOTER_"
 
 # Purge valve pin
 purge_valve_pin = 3
+ignition_pin = 13
+continuite_pin = 9
 
 # UART pins
 uart_tx = 0
@@ -34,16 +36,13 @@ i2c_sda = 4
 i2c_scl = 5
 
 # i2c addresses for the m3200 sensors
-m32_multiplexer = 0x70
+m32_multiplexer = 40
 m32_tank1 = b'2'
 m32_tank2 = b'4'
 m32_engine = b'6'
 
 # i2c param for the gps
 gps_add = 66
-
-ignition = 13
-continuite = 9
 
 # i2c param for the current sensor
 current_sensor_add = 64
@@ -564,16 +563,13 @@ class logger:
     def __init__(self, filename, uart):
         self.filename = filename   
         self.uart = uart
+    
+    def write_to_serial(self):
+        self.uart.write(_serial_start + str(data) + _serial_stop)
+    
+    def write_to_uSD(self):
+        msg = str(data)
         
-    def write(self):
-        print(data.tank1.pressure)
-        self._write_to_serial(_serial_start + str(data) + _serial_stop)
-        self._write_to_uSD(str(data))
-    
-    def _write_to_serial(self, msg: str):
-        self.uart.write(msg)
-    
-    def _write_to_uSD(self, msg: str):
         self.spi = SoftSPI(
             baudrate=1000000,
             polarity=0,
@@ -638,7 +634,7 @@ def emergency_stop():
 
 
 def ignition():
-    purge_valve = Pin(ignition, Pin.OUT)
+    purge_valve = Pin(ignition_pin, Pin.OUT)
     purge_valve.on()
 
 
@@ -655,24 +651,28 @@ def switch_multiplexer(device):
     i2c.writeto(m32_multiplexer, device)
 
 def refresh_data(t):
-        m32 = m32_sensor()
-        power_sensor = power_supplie_sensor()
+    m32 = m32_sensor()
+    power_sensor = power_supplie_sensor()
     
-    if(multiplexor)
+    if(multiplexor):
         switch_multiplexer(m32_tank1)
         data.tank1 = m32.get_data()
         
         switch_multiplexer(m32_tank2)
         data.tank2 = m32.get_data()
-    else
+    else:
         m32_multiplexer = 40
         data.tank1 = m32.get_data()
         data.tank2 = m32_data()
+    
+    #print(str(data.tank1.pressure))
     
     #purge_valve = Pin(purge_valve_pin, Pin.IN)
     #data.purge_valve = purge_valve.value()
     
     data.power = power_sensor.get_data()
+    
+    log.write_to_uSD()
 
 
 class serial:
@@ -732,7 +732,7 @@ def exec_cmd(cmd):
         purge_close()
         
     elif cmd == "data":
-        log.write()
+        log.write_to_serial()
 
 
 def commands(t):
@@ -743,7 +743,10 @@ def commands(t):
         exec_cmd(command)
 
 def init():
-    purge_valve = Pin(ignition, Pin.OUT)
+    purge_valve = Pin(ignition_pin, Pin.OUT)
+    purge_valve.off()
+    
+    purge_valve = Pin(ignition_pin, Pin.OUT)
     purge_valve.off()
     
     main_valve_close()
@@ -755,11 +758,11 @@ def main():
     timerRefreshData = Timer()
     timerCommands = Timer()
     
-    timerRefreshData.init(period=100, callback=refresh_data)
+    timerRefreshData.init(period=10, callback=refresh_data)
     timerCommands.init(period=50, callback=commands)
     
     while True:
-        time.sleep(1000)  
+        time.sleep(1000)
 
 
 if __name__ == "__main__":

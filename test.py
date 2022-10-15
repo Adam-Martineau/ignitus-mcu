@@ -9,6 +9,10 @@ from machine import RTC, Pin, UART, Pin, SoftI2C
 ############### CONSTANTS #################
 ###########################################
 
+purge_valve_pin = 3
+ignition_pin = 13
+continuite_pin = 9
+
 # UART pins
 uart_tx = 0
 uart_rx = 1
@@ -66,6 +70,18 @@ def close_servo():
 def servo_percent(p):
     moteur = servo(servo_pin)
     moteur.set_percent(p)
+    
+def purge_open():
+    purge_valve = Pin(purge_valve_pin, Pin.OUT)
+    purge_valve.on()
+
+def purge_close():
+    purge_valve = Pin(purge_valve_pin, Pin.OUT)
+    purge_valve.off()
+    
+def ignition():
+    purge_valve = Pin(ignition_pin, Pin.OUT)
+    purge_valve.on()
 
 def get_gpio(gpio):
     return Pin(gpio).value()
