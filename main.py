@@ -8,8 +8,6 @@ from machine import Pin, UART, RTC, I2C, SoftI2C, PWM, SoftSPI, Timer
 ############### CONSTANTS #################
 ###########################################
 
-multiplexor = False
-
 _serial_start = "_JSONHEADER_"
 _serial_stop = "_JSONFOOTER_"
 
@@ -32,14 +30,13 @@ uSD_cs = 21
 uSD_sck = 22
 
 # I2C pinout
-i2c_sda = 4
-i2c_scl = 5
+i2c_sda0 = 4
+i2c_scl0 = 5
+i2c_sda1 = 2
+i2c_scl1 = 3
 
 # i2c addresses for the m3200 sensors
-m32_multiplexer = 40
-m32_tank1 = b'2'
-m32_tank2 = b'4'
-m32_engine = b'6'
+m32_add = 40
 
 # i2c param for the gps
 gps_add = 66
@@ -484,10 +481,10 @@ class m32_data:
 class m32_sensor:
     data = m32_data()
 
-    def get_data(self):
+    def get_data(self, i2c_line):
         self.data.add = m32_multiplexer
         
-        self._read_bytes()
+        self._read_bytes(i2c_line)
         self._convert_press()
         self._convert_temp()
         return self.data
@@ -500,8 +497,14 @@ class m32_sensor:
         self.data.pressure = (self.data.pressure * 350) / 100
         self.data.pressure = self.data.pressure * 14.506
         
-    def _read_bytes(self):
-        i2c = I2C(0, scl=Pin(i2c_scl), sda=Pin(i2c_sda), freq=100_000)
+    def _read_bytes(self, i2c_line):
+        i2c = None
+        
+        if(i2c_line == 0):
+            i2c = I2C(0, scl=Pin(i2c_scl0), sda=Pin(i2c_sda0), freq=100_000)
+        else
+            i2c = I2C(0, scl=Pin(i2c_scl1), sda=Pin(i2c_sda1), freq=100_000)
+            
         i2c.writeto(m32_multiplexer, m32_multiplexer.to_bytes(2, 'big'))
         mybytes = i2c.readfrom(m32_multiplexer, 4, True)
 
@@ -517,7 +520,6 @@ class m32_sensor:
 class system_data:
     tank1 = m32_data()
     tank2 = m32_data()
-    engine = m32_data()
     power = power_supplie_data()
     battery = False
     armed = False
@@ -536,10 +538,6 @@ class system_data:
                 'tank2_temp': self.tank2.temp,
                 'tank2_status': self.tank2.status,
                 'tank2_pressure': self.tank2.pressure,
-                'engine_add': self.engine.add,
-                'engine_temp': self.engine.temp,
-                'engine_status': self.engine.status,
-                'engine_pressure': self.engine.pressure,
                 'power_add': self.power.add,
                 'power_power': self.power.power,
                 'power_current': self.power.current,
@@ -653,17 +651,9 @@ def switch_multiplexer(device):
 def refresh_data(t):
     m32 = m32_sensor()
     power_sensor = power_supplie_sensor()
-    
-    if(multiplexor):
-        switch_multiplexer(m32_tank1)
-        data.tank1 = m32.get_data()
-        
-        switch_multiplexer(m32_tank2)
-        data.tank2 = m32.get_data()
-    else:
-        m32_multiplexer = 40
-        data.tank1 = m32.get_data()
-        data.tank2 = m32_data()
+
+    data.tank1 = m32.get_data(0)
+    data.tank2 = m32.get_data(1)
     
     #print(str(data.tank1.pressure))
     

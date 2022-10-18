@@ -2,14 +2,14 @@
 # python terminal
 
 from time import sleep_ms,
-from machine import RTC, Pin, UART, Pin, SoftI2C
+from machine import RTC, Pin, UART, Pin, SoftI2C, PWM
 
 
 ###########################################
 ############### CONSTANTS #################
 ###########################################
 
-purge_valve_pin = 3
+purge_valve_pin = 14
 ignition_pin = 13
 continuite_pin = 9
 
@@ -63,28 +63,35 @@ def open_servo():
     moteur = servo(servo_pin)
     moteur.open()
 
+
 def close_servo():
     moteur = servo(servo_pin)
     moteur.close()
+
 
 def servo_percent(p):
     moteur = servo(servo_pin)
     moteur.set_percent(p)
     
+    
 def purge_open():
     purge_valve = Pin(purge_valve_pin, Pin.OUT)
     purge_valve.on()
+
 
 def purge_close():
     purge_valve = Pin(purge_valve_pin, Pin.OUT)
     purge_valve.off()
     
+    
 def ignition():
     purge_valve = Pin(ignition_pin, Pin.OUT)
     purge_valve.on()
 
+
 def get_gpio(gpio):
     return Pin(gpio).value()
+    
     
 def i2c_scan():
     i2c = SoftI2C(scl=Pin(i2c_scl), sda=Pin(i2c_sda), freq=100_000)
