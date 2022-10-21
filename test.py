@@ -9,16 +9,16 @@ from machine import RTC, Pin, UART, Pin, SoftI2C, PWM
 ############### CONSTANTS #################
 ###########################################
 
-purge_valve_pin = 14
+# Pin
+purge_valve_pin = 18
+servo_pin = 16
 ignition_pin = 13
 continuite_pin = 9
+arming_pin = 17
 
 # UART pins
 uart_tx = 0
 uart_rx = 1
-
-# Servo motor
-servo_pin = 13
 
 # I2C pinout
 i2c_sda = 4
@@ -39,20 +39,23 @@ class servo:
         self.pwm = PWM(self.pin)
         self.pwm.freq(333)
 
-    def open(self):
-        self.pwm.duty_u16(43690)
-    
-    def middle(self):
-        self.pwm.duty_u16(32767)
-
-    def close(self):
-        self.pwm.duty_u16(21845)
-        
     def set_percent(self, percent):
         range = pwm_max - pwm_min
         value = (percent * range) // 100
         value = value + pwm_min
         self.pwm.duty_u16(value)
+
+    def open(self):
+        #self.pwm.duty_u16(43690)
+        self.set_percent(98)
+    
+    def middle(self):
+        #self.pwm.duty_u16(32767)
+        self.set_percent(45)
+
+    def close(self):
+        #self.pwm.duty_u16(21845)
+        self.set_percent(0)
 
 
 ###########################################
@@ -63,35 +66,28 @@ def open_servo():
     moteur = servo(servo_pin)
     moteur.open()
 
-
 def close_servo():
     moteur = servo(servo_pin)
     moteur.close()
-
 
 def servo_percent(p):
     moteur = servo(servo_pin)
     moteur.set_percent(p)
     
-    
 def purge_open():
     purge_valve = Pin(purge_valve_pin, Pin.OUT)
     purge_valve.on()
-
 
 def purge_close():
     purge_valve = Pin(purge_valve_pin, Pin.OUT)
     purge_valve.off()
     
-    
 def ignition():
-    purge_valve = Pin(ignition_pin, Pin.OUT)
-    purge_valve.on()
-
+    ignition = Pin(ignition_pin, Pin.OUT)
+    ignition.on()
 
 def get_gpio(gpio):
     return Pin(gpio).value()
-    
     
 def i2c_scan():
     i2c = SoftI2C(scl=Pin(i2c_scl), sda=Pin(i2c_sda), freq=100_000)
@@ -99,14 +95,11 @@ def i2c_scan():
     i2c = SoftI2C(scl=Pin(3), sda=Pin(2), freq=100_000)
     print(i2c.scan())
 
-
 def serial_tx(msg):   
     uart.write(msg)
     
-
 def serial_rx():
     print(uart.read())
-    
     
 def logging_test():
     uart = UART(0, baudrate=9600, tx=Pin(uart_tx), rx=Pin(uart_rx), bits=8, parity=None, stop=1)

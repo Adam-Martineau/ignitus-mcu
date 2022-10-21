@@ -11,17 +11,16 @@ from machine import Pin, UART, RTC, I2C, SoftI2C, PWM, SoftSPI, Timer
 _serial_start = "_JSONHEADER_"
 _serial_stop = "_JSONFOOTER_"
 
-# Purge valve pin
+# Pin
 purge_valve_pin = 3
+servo_pin = 16
 ignition_pin = 13
 continuite_pin = 9
+arming_pin = 17
 
 # UART pins
 uart_tx = 0
 uart_rx = 1
-
-# Servo motor
-servo_pin = 6
 
 # SPI pinout for the uSD card reader
 uSD_miso = 20
@@ -477,12 +476,12 @@ class m32_data:
     temp = 0
     status = 0
     pressure = 0
-    
+
 class m32_sensor:
     data = m32_data()
 
     def get_data(self, i2c_line):
-        self.data.add = m32_multiplexer
+        self.data.add = m32_add
         
         self._read_bytes(i2c_line)
         self._convert_press()
@@ -502,11 +501,11 @@ class m32_sensor:
         
         if(i2c_line == 0):
             i2c = I2C(0, scl=Pin(i2c_scl0), sda=Pin(i2c_sda0), freq=100_000)
-        else
-            i2c = I2C(0, scl=Pin(i2c_scl1), sda=Pin(i2c_sda1), freq=100_000)
+        else:
+            i2c = I2C(1, scl=Pin(i2c_scl1), sda=Pin(i2c_sda1), freq=100_000)
             
-        i2c.writeto(m32_multiplexer, m32_multiplexer.to_bytes(2, 'big'))
-        mybytes = i2c.readfrom(m32_multiplexer, 4, True)
+        i2c.writeto(m32_add, m32_add.to_bytes(2, 'big'))
+        mybytes = i2c.readfrom(m32_add, 4, True)
 
         self.data.status = mybytes[0] >> 6
         self.data.pressure = ((mybytes[0] << 8) + mybytes[1]) & 0x3FFF
@@ -607,46 +606,43 @@ log = logger("test", uart)
 def purge_open():
     purge_valve = Pin(purge_valve_pin, Pin.OUT)
     purge_valve.on()
+    data.purge_valve = True
 
 
 def purge_close():
     purge_valve = Pin(purge_valve_pin, Pin.OUT)
     purge_valve.off()
+    data.purge_valve = False
 
 
 def main_valve_open():
     valve = servo(servo_pin)
     valve.open()
+    data.main_valve = True
 
 
 def main_valve_close():
     valve = servo(servo_pin)
     valve.close()
+    data.main_valve = False
 
 
 def emergency_stop():
     valve = servo(servo_pin)
     valve.close()
-    
     purge_open()
 
 
 def ignition():
-    purge_valve = Pin(ignition_pin, Pin.OUT)
-    purge_valve.on()
+    ignition = Pin(ignition_pin, Pin.OUT)
+    ignition.on()
+    data.ignition = True
+    
 
 
 ###########################################
 ################# MAIN ####################
 ###########################################
-
-def switch_multiplexer(device):
-    i2c = I2C(0,
-            scl=Pin(i2c_scl), 
-            sda=Pin(i2c_sda), 
-            freq=100_000)
-            
-    i2c.writeto(m32_multiplexer, device)
 
 def refresh_data(t):
     m32 = m32_sensor()
@@ -654,13 +650,11 @@ def refresh_data(t):
 
     data.tank1 = m32.get_data(0)
     data.tank2 = m32.get_data(1)
-    
-    #print(str(data.tank1.pressure))
-    
+    data.power = power_sensor.get_data()
+
+    # Update purge
     #purge_valve = Pin(purge_valve_pin, Pin.IN)
     #data.purge_valve = purge_valve.value()
-    
-    data.power = power_sensor.get_data()
     
     log.write_to_uSD()
 
@@ -733,12 +727,8 @@ def commands(t):
         exec_cmd(command)
 
 def init():
-    purge_valve = Pin(ignition_pin, Pin.OUT)
-    purge_valve.off()
-    
-    purge_valve = Pin(ignition_pin, Pin.OUT)
-    purge_valve.off()
-    
+    Pin(purge_valve_pin, Pin.OUT).off()
+    Pin(ignition_pin, Pin.OUT).off()
     main_valve_close()
     purge_close()
 
