@@ -22,7 +22,22 @@ To run the functional tests:
 1. Do all the step from the "To install the main program" section, but on stap 2. use the test.py file.
 2. Once the program has run, you can use the terminal to manually run a test.
 
-Exemple ->
+Here's the list of command you can use in the terminal when running test:
+
+open_servo()
+close_servo()
+servo_percent(percent)
+purge_open()
+purge_close()
+ignition()
+get_gpio(gpio)
+i2c_scan()
+serial_tx(text)
+serial_rx()
+main_valve_open()
+logging_test()
+
+Exemple:
 
 MicroPython v1.18 on 2022-01-17; Raspberry Pi Pico with RP2040
 
