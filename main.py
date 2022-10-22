@@ -385,20 +385,23 @@ class servo:
         self.pwm = PWM(self.pin)
         self.pwm.freq(333)
 
-    def open(self):
-        self.pwm.duty_u16(43690)
-    
-    def middle(self):
-        self.pwm.duty_u16(32767)
-
-    def close(self):
-        self.pwm.duty_u16(21845)
-        
     def set_percent(self, percent):
         range = pwm_max - pwm_min
         value = (percent * range) // 100
         value = value + pwm_min
         self.pwm.duty_u16(value)
+
+    def open(self):
+        #self.pwm.duty_u16(43690)
+        self.set_percent(98)
+    
+    def middle(self):
+        #self.pwm.duty_u16(32767)
+        self.set_percent(45)
+
+    def close(self):
+        #self.pwm.duty_u16(21845)
+        self.set_percent(0)
 
 
 ###########################################
@@ -617,9 +620,13 @@ def purge_close():
 
 def main_valve_open():
     valve = servo(servo_pin)
-    valve.open()
     data.main_valve = True
-
+    valve.middle()
+    time.sleep(1000)
+    valve.open()
+    time.sleep(6000)
+    valve.close()
+    
 
 def main_valve_close():
     valve = servo(servo_pin)

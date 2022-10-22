@@ -101,6 +101,14 @@ def serial_tx(msg):
 def serial_rx():
     print(uart.read())
     
+def main_valve_open():
+    valve = servo(servo_pin)
+    valve.middle()
+    time.sleep(1000)
+    valve.open()
+    time.sleep(6000)
+    valve.close()
+    
 def logging_test():
     uart = UART(0, baudrate=9600, tx=Pin(uart_tx), rx=Pin(uart_rx), bits=8, parity=None, stop=1)
     log = logger("thisisatest", uart)
