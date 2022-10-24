@@ -85,16 +85,20 @@ def purge_close():
 def ignition():
     ignition = Pin(ignition_pin, Pin.OUT)
     ignition.on()
+    
+def anti_ignition():
+    ignition = Pin(ignition_pin, Pin.OUT)
+    ignition.off()
 
 def get_gpio(gpio):
     return Pin(gpio).value()
 
-def set_gpio(gpio, state):
+def set_gpio(gpio, state): 
     pin = Pin(gpio, Pin.OUT)
     
     if state:
         pin.on()
-    else
+    else:
         pin.off()
     
 def i2c_scan():
