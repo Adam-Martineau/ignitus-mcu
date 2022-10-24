@@ -11,7 +11,7 @@ from machine import RTC, Pin, UART, Pin, SoftI2C, PWM
 
 # Pin
 purge_valve_pin = 18
-servo_pin = 16
+servo_pin = 13
 ignition_pin = 13
 continuite_pin = 9
 arming_pin = 17
@@ -88,6 +88,14 @@ def ignition():
 
 def get_gpio(gpio):
     return Pin(gpio).value()
+
+def set_gpio(gpio, state):
+    pin = Pin(gpio, Pin.OUT)
+    
+    if state:
+        pin.on()
+    else
+        pin.off()
     
 def i2c_scan():
     i2c = SoftI2C(scl=Pin(i2c_scl), sda=Pin(i2c_sda), freq=100_000)
