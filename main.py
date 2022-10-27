@@ -12,10 +12,16 @@ _serial_start = "_JSONHEADER_"
 _serial_stop = "_JSONFOOTER_"
 
 # Pin
-purge_valve_pin = 3
-servo_pin = 16
-ignition_pin = 13
-continuite_pin = 9
+#purge_valve_pin = 3
+#servo_pin = 16
+#ignition_pin = 13
+#continuite_pin = 9
+#arming_pin = 17
+
+purge_valve_pin = 18
+servo_pin = 13
+ignition_pin = 9
+continuite_pin = 1
 arming_pin = 17
 
 # UART pins
@@ -507,7 +513,7 @@ class m32_sensor:
         else:
             i2c = I2C(1, scl=Pin(i2c_scl1), sda=Pin(i2c_sda1), freq=100_000)
             
-        i2c.writeto(m32_add, m32_add.to_bytes(2, 'big'))
+        #i2c.writeto(m32_add, m32_add.to_bytes(2, 'big'))
         mybytes = i2c.readfrom(m32_add, 4, True)
 
         self.data.status = mybytes[0] >> 6
@@ -622,9 +628,9 @@ def main_valve_open():
     valve = servo(servo_pin)
     data.main_valve = True
     valve.middle()
-    time.sleep(1000)
+    time.sleep(1)
     valve.open()
-    time.sleep(6000)
+    time.sleep(6)
     valve.close()
     
 
@@ -653,17 +659,17 @@ def ignition():
 
 def refresh_data(t):
     m32 = m32_sensor()
-    power_sensor = power_supplie_sensor()
+    #power_sensor = power_supplie_sensor()
 
-    data.tank1 = m32.get_data(0)
-    data.tank2 = m32.get_data(1)
-    data.power = power_sensor.get_data()
+        data.tank1 = m32.get_data(0)
+    #data.tank2 = m32.get_data(1)
+    #data.power = power_sensor.get_data()
 
     # Update purge
     #purge_valve = Pin(purge_valve_pin, Pin.IN)
     #data.purge_valve = purge_valve.value()
     
-    log.write_to_uSD()
+    #log.write_to_uSD()
 
 
 class serial:
@@ -740,16 +746,17 @@ def init():
     purge_close()
 
 def main():
-    init()
+    #init()
     
     timerRefreshData = Timer()
     timerCommands = Timer()
     
-    timerRefreshData.init(period=10, callback=refresh_data)
+    timerRefreshData.init(period=100, callback=refresh_data)
     timerCommands.init(period=50, callback=commands)
     
     while True:
-        time.sleep(1000)
+        time.sleep(1)
+        print("alive")
 
 
 if __name__ == "__main__":

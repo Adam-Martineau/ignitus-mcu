@@ -12,8 +12,8 @@ from machine import RTC, Pin, UART, Pin, SoftI2C, PWM
 # Pin
 purge_valve_pin = 18
 servo_pin = 13
-ignition_pin = 13
-continuite_pin = 9
+ignition_pin = 9
+continuite_pin = 1
 arming_pin = 17
 
 # UART pins
@@ -62,6 +62,10 @@ class servo:
 ################# TESTS ###################
 ###########################################
         
+def scan_gpio():
+    for i in range(0, 29):
+        print("GPIO" + str(i) + ":" + str(Pin(i).value()))
+
 def open_servo():
     moteur = servo(servo_pin)
     moteur.open()
