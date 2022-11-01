@@ -661,7 +661,7 @@ def refresh_data(t):
     m32 = m32_sensor()
     #power_sensor = power_supplie_sensor()
 
-        data.tank1 = m32.get_data(0)
+    data.tank1 = m32.get_data(0)
     #data.tank2 = m32.get_data(1)
     #data.power = power_sensor.get_data()
 
@@ -754,10 +754,15 @@ def main():
     timerRefreshData.init(period=100, callback=refresh_data)
     timerCommands.init(period=50, callback=commands)
     
+    led = Pin(25, Pin.OUT)
+    
     while True:
-        time.sleep(1)
+        led.on()
         print("alive")
-
+        time.sleep(1)
+        led.off() 
+        print("alive")
+        time.sleep(1)
 
 if __name__ == "__main__":
     main()
