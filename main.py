@@ -12,15 +12,9 @@ _serial_start = "_JSONHEADER_"
 _serial_stop = "_JSONFOOTER_"
 
 # Pin
-#purge_valve_pin = 3
-#servo_pin = 16
-#ignition_pin = 13
-#continuite_pin = 9
-#arming_pin = 17
-
-purge_valve_pin = 18
+purge_valve_pin = 27
 servo_pin = 13
-ignition_pin = 9
+ignition_pin = 26
 continuite_pin = 1
 arming_pin = 17
 
@@ -58,6 +52,7 @@ max_current = 2
 r_shunt = 0.1
 
 uart = UART(0, baudrate=9600, tx=Pin(uart_tx), rx=Pin(uart_rx), bits=8, parity=None, stop=1)
+purge_valve = Pin(purge_valve_pin)
 
 
 ###########################################
@@ -399,7 +394,7 @@ class servo:
 
     def open(self):
         #self.pwm.duty_u16(43690)
-        self.set_percent(98)
+        self.set_percent(100)
     
     def middle(self):
         #self.pwm.duty_u16(32767)
@@ -495,6 +490,7 @@ class m32_sensor:
         self._read_bytes(i2c_line)
         self._convert_press()
         self._convert_temp()
+        print(self.data.pressure)
         return self.data
 
     def _convert_temp(self):
@@ -613,13 +609,11 @@ log = logger("test", uart)
 ###########################################
 
 def purge_open():
-    purge_valve = Pin(purge_valve_pin, Pin.OUT)
     purge_valve.on()
     data.purge_valve = True
 
 
 def purge_close():
-    purge_valve = Pin(purge_valve_pin, Pin.OUT)
     purge_valve.off()
     data.purge_valve = False
 
@@ -667,9 +661,9 @@ def refresh_data(t):
 
     # Update purge
     #purge_valve = Pin(purge_valve_pin, Pin.IN)
-    #data.purge_valve = purge_valve.value()
+    data.purge_valve = purge_valve.value()
     
-    #log.write_to_uSD()
+    log.write_to_uSD()
 
 
 class serial:
@@ -679,10 +673,10 @@ class serial:
     
     commands_list = ["emergency_stop", 
                      "ignition", 
-                     "main_valve_open", 
-                     "main_valve_close", 
-                     "purge_open", 
-                     "purge_close",
+                     "open_main_valve", 
+                     "close_main_valve", 
+                     "close_purge_valve", 
+                     "open_purge_valve",
                      "data"]
 
     buffer = ""
@@ -716,16 +710,17 @@ def exec_cmd(cmd):
     elif cmd == "ignition":
         ignition()
 
-    elif cmd == "main_valve_open":
+    elif cmd == "open_main_valve":
         main_valve_open()
 
-    elif cmd == "main_valve_close":
+    elif cmd == "close_main_valve":
         main_valve_close()
 
-    elif cmd == "purge_open":
+    elif cmd == "open_purge_valve":
+        print("lets open")
         purge_open()
 
-    elif cmd == "purge_close":
+    elif cmd == "close_purge_valve":
         purge_close()
         
     elif cmd == "data":
@@ -746,12 +741,12 @@ def init():
     purge_close()
 
 def main():
-    #init()
+    init()
     
     timerRefreshData = Timer()
     timerCommands = Timer()
     
-    timerRefreshData.init(period=100, callback=refresh_data)
+    timerRefreshData.init(period=500, callback=refresh_data)
     timerCommands.init(period=50, callback=commands)
     
     led = Pin(25, Pin.OUT)

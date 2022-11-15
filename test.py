@@ -10,9 +10,9 @@ from machine import RTC, Pin, UART, Pin, SoftI2C, PWM
 ###########################################
 
 # Pin
-purge_valve_pin = 18
+purge_valve_pin = 27
 servo_pin = 13
-ignition_pin = 9
+ignition_pin = 26
 continuite_pin = 1
 arming_pin = 17
 
@@ -21,8 +21,10 @@ uart_tx = 0
 uart_rx = 1
 
 # I2C pinout
-i2c_sda = 4
-i2c_scl = 5
+i2c_sda0 = 4
+i2c_scl0 = 5
+i2c_sda1 = 6
+i2c_scl1 = 7
 
 uart = UART(0, baudrate=9600, tx=Pin(uart_tx), rx=Pin(uart_rx), bits=8, parity=None, stop=1)
 
@@ -106,9 +108,9 @@ def set_gpio(gpio, state):
         pin.off()
     
 def i2c_scan():
-    i2c = SoftI2C(scl=Pin(i2c_scl), sda=Pin(i2c_sda), freq=100_000)
+    i2c = SoftI2C(scl=Pin(i2c_scl0), sda=Pin(i2c_sda0), freq=100_000)
     print(i2c.scan())
-    i2c = SoftI2C(scl=Pin(3), sda=Pin(2), freq=100_000)
+    i2c = SoftI2C(scl=Pin(i2c_scl1), sda=Pin(i2c_sda1), freq=100_000)
     print(i2c.scan())
 
 def serial_tx(msg):   
